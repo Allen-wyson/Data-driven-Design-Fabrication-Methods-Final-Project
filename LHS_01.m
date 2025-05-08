@@ -1,3 +1,5 @@
+clc; close all; clear;
+
 % Define discrete value sets based on step sizes
 radialThreadsVals = 5:1:15;
 spiralThreadsVals = 5:1:15;
