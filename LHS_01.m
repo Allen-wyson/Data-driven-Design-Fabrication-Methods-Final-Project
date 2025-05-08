@@ -1,3 +1,5 @@
+clc; close all; clear;
+
 % Define discrete value sets based on step sizes
 radialThreadsVals = 5:1:15;
 spiralThreadsVals = 5:1:15;
@@ -5,7 +7,7 @@ drVals = 2.5:0.5:4;    % Diameter of radial thread
 dsVals = 0.5:0.5:2;    % Diameter of spiral thread
 
 % Latin Hypercube Sampling
-nSamples = 1600;        % Number of samples
+nSamples = 6;        % Number of samples
 nParams = 4;            % Number of design parameters
 lhsMatrix = lhsdesign(nSamples, nParams);  % Normalized LHS values
 
