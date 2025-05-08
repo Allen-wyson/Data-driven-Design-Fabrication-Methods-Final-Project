@@ -24,3 +24,4 @@ end
 % C = X.*Y;
 % surf(X,Y,Z,C)
 % colorbar
+% hfzutf
