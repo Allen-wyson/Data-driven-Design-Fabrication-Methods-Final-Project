@@ -24,5 +24,3 @@ end
 % C = X.*Y;
 % surf(X,Y,Z,C)
 % colorbar
-BOExample.m
-Displaying BOExample.m.
