@@ -1,0 +1,100 @@
+%% Bayesian workflow with persistent seeds & 30-run stopping
+clc; clear; close all;
+
+%% 1) Define your discrete/continuous parameter spaces
+radialCats = cellstr(string(5:1:15));   % e.g. {'5';'6';...;'15'}
+spiralCats = cellstr(string(5:1:15));
+drCats     = cellstr(string(2.5:0.5:4.0));
+dsCats     = cellstr(string(0.5:0.5:2.0));
+
+vars = [
+  optimizableVariable('radial',  radialCats)
+  optimizableVariable('spiral',  spiralCats)
+  optimizableVariable('dr',      drCats)
+  optimizableVariable('ds',      dsCats)
+];
+
+%% 2) Load or generate-and-save 6 initial LHS seeds
+if exist('sampledParams.mat','file')
+    fprintf('sampledParams.mat found – using existing samples.\n');
+    load('sampledParams.mat','sampledParams');
+else
+    % Generate and persist the 6 LHS‐samples
+    generateInitialSamples();
+    load('sampledParams.mat','sampledParams');
+end
+
+%% 3) Prompt once for those 6 seed evaluations
+nInit = size(sampledParams,1);
+f0    = zeros(nInit,1);
+
+for i = 1:nInit
+    r  = sampledParams(i,1);
+    s  = sampledParams(i,2);
+    dr = sampledParams(i,3);
+    ds = sampledParams(i,4);
+
+    fprintf('\nInitial sample %d:\n', i);
+    fprintf('  radialThreads = %d\n', r);
+    fprintf('  spiralThreads = %d\n', s);
+    fprintf('  dr            = %.2f\n', dr);
+    fprintf('  ds            = %.2f\n', ds);
+
+    f0(i) = input('Enter measured strength/weight for this sample: ');
+end
+
+
+%% 4) Build InitialX table & run Bayesian Optimization (30 total evals)
+% Reconstruct the categorical entries
+radialIdx = arrayfun(@(v)find(radialVals==v,1), sampledParams(:,1));
+spiralIdx = arrayfun(@(v)find(spiralVals==v,1), sampledParams(:,2));
+drIdx     = arrayfun(@(v)find(drVals==v,1),     sampledParams(:,3));
+dsIdx     = arrayfun(@(v)find(dsVals==v,1),     sampledParams(:,4));
+
+radialInit = radialCats(radialIdx);
+spiralInit = spiralCats(spiralIdx);
+drInit     = drCats(drIdx);
+dsInit     = dsCats(dsIdx);
+
+% ─── Make absolutely sure each is a 6×1 column ───
+radialInit = radialInit(:);
+spiralInit = spiralInit(:);
+drInit     = drInit(:);
+dsInit     = dsInit(:);
+
+% Now the table will line up
+initTable = table( ...
+  radialInit, spiralInit, drInit, dsInit, ...
+  'VariableNames',{'radial','spiral','dr','ds'} ...
+);
+
+results = bayesopt( ...
+    @objectiveManual, vars, ...
+    'InitialX',            initTable, ...
+    'InitialObjective',    f0, ...
+    'NumSeedPoints',       size(initTable,1), ...
+    'MaxObjectiveEvaluations', 30, ...   % stop after 30 total runs
+    'AcquisitionFunctionName','expected-improvement-plus', ...
+    'ExplorationRatio',    0.9, ...
+    'PlotFcn',{@plotAcquisitionFunction,@plotObjectiveModel,@plotMinObjective} ...
+);
+
+%% 5) Objective for the *new* points
+function f = objectiveManual(x)
+    % Convert back to numeric
+    r  = str2double(x.radial);
+    s  = str2double(x.spiral);
+    dr = str2double(x.dr);
+    ds = str2double(x.ds);
+
+    fprintf('\n--- Next query design ---\n');
+    fprintf('  radialThreads = %d\n', r);
+    fprintf('  spiralThreads = %d\n', s);
+    fprintf('  dr            = %.2f\n', dr);
+    fprintf('  ds            = %.2f\n', ds);
+
+    % Prompt for ANSYS result
+    f = input('Run ANSYS with these settings and enter measured strength/weight: ');
+end
+
+
