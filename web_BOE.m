@@ -15,11 +15,11 @@ vars = [
 ];
 
 %% 2) Load or generate-and-save 6 initial LHS seeds
-nInit = 6;
+nInit = 4;
 seedFile = 'initialSeeds.mat';
 if exist(seedFile,'file')
     load(seedFile,'initTable');
-    fprintf('Loaded existing %s (6 seed points)\n', seedFile);
+    fprintf('Loaded existing %s (4 seed points)\n', seedFile);
 else
     rng(1234);  % fixed RNG seed for reproducibility
     lhsM = lhsdesign(nInit, numel(vars));
@@ -31,7 +31,7 @@ else
       'VariableNames',{'radialIdx','spiralIdx','drIdx','dsIdx'} ...
     );
     save(seedFile,'initTable');
-    fprintf('Generated & saved %s with 6 seed points\n', seedFile);
+    fprintf('Generated & saved %s with 4 seed points\n', seedFile);
 end
 
 %% 3) Prompt once for those 6 seed evaluations
