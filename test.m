@@ -1,4 +1,4 @@
-%% Bayesian workflow with persistent seeds & 30-run stopping
+%% Bayesian workflow with persistent seeds & 20-run stopping
 clc; clear; close all;
 
 %% 1) Define your discrete/continuous parameter spaces
@@ -14,12 +14,12 @@ vars = [
     optimizableVariable('dsIdx',    [1,numel(dsVals)],     'Type','integer')
 ];
 
-%% 2) Load or generate-and-save 6 initial LHS seeds
-nInit = 6;
+%% 2) Load or generate-and-save 4 initial LHS seeds
+nInit = 4;
 seedFile = 'initialSeeds.mat';
 if exist(seedFile,'file')
     load(seedFile,'initTable');
-    fprintf('Loaded existing %s (6 seed points)\n', seedFile);
+    fprintf('Loaded existing %s (4 seed points)\n', seedFile);
 else
     rng(1234);  % fixed RNG seed for reproducibility
     lhsM = lhsdesign(nInit, numel(vars));
@@ -31,10 +31,10 @@ else
       'VariableNames',{'radialIdx','spiralIdx','drIdx','dsIdx'} ...
     );
     save(seedFile,'initTable');
-    fprintf('Generated & saved %s with 6 seed points\n', seedFile);
+    fprintf('Generated & saved %s with 4 seed points\n', seedFile);
 end
 
-%% 3) Prompt once for those 6 seed evaluations
+%% 3) Prompt once for those 4 seed evaluations
 f0 = zeros(nInit,1);
 for i = 1:nInit
     r  = radialVals( initTable.radialIdx(i) );
@@ -49,14 +49,14 @@ for i = 1:nInit
     f0(i) = input('Enter measured strength/weight for this sample: ');
 end
 
-%% 4) Run Bayesian Optimization (total 30 runs including the 6 seeds)
+%% 4) Run Bayesian Optimization (total 20 runs including the 4 seeds)
 results = bayesopt( ...
     @(x)objectiveManual(x,radialVals,spiralVals,drVals,dsVals), ...
     vars, ...
     'InitialX',         initTable, ...
     'InitialObjective', f0, ...
     'NumSeedPoints',    nInit, ...
-    'MaxObjectiveEvaluations', 10, ...      % stop after 30 total
+    'MaxObjectiveEvaluations', 16, ...      % stop after 20 total
     'AcquisitionFunctionName','expected-improvement-plus', ...
     'ExplorationRatio', 0.9, ...
     'PlotFcn',{@plotAcquisitionFunction,@plotObjectiveModel,@plotMinObjective} ...
