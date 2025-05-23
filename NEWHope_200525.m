@@ -48,7 +48,7 @@ end
 
 %% 3) Set up segment breakpoints & decaying ratios
 segmentTotals    = [8, 12, 16, 20];           % cumulative eval counts
-explorationRatio = [0.90, 0.64, 0.38, 0.10];   % per segment
+explorationRatio = [0.90, 0.64, 0.38, 0.20];   % per segment
 
 %% 4) Run remaining segments
 for seg = (segmentDone+1):numel(segmentTotals)
@@ -123,13 +123,8 @@ function f = objectiveManual(x,radialVals,spiralVals,drVals,dsVals)
     f   = -raw;
 end
 
-%% Helper: generate LHS seed table
-function initTable = generateInitialSamples(radialVals,spiralVals,drVals,dsVals,nSamples)
-    lhsM = lhsdesign(nSamples, 4);
-    radialIdx = ceil(lhsM(:,1) * numel(radialVals));
-    spiralIdx = ceil(lhsM(:,2) * numel(spiralVals));
-    drIdx     = ceil(lhsM(:,3) * numel(drVals));
-    dsIdx     = ceil(lhsM(:,4) * numel(dsVals));
-    initTable = table(radialIdx,spiralIdx,drIdx,dsIdx, ...
-        'VariableNames',{'radialIdx','spiralIdx','drIdx','dsIdx'});
-end
+
+
+
+
+
