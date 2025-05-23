@@ -1,0 +1,78 @@
+clc; clear; close all;
+
+%% 1) Define parameter spaces
+radialVals = (5:15)';      % possible radial thread counts
+spiralVals = (5:15)';      % possible spiral thread counts
+drVals     = (2.5:0.5:4.0)';% possible dr values
+dsVals     = (0.5:0.5:2.0)';% possible ds values
+
+vars = [
+  optimizableVariable('radialIdx',[1,numel(radialVals)],'Type','integer')
+  optimizableVariable('spiralIdx',[1,numel(spiralVals)],'Type','integer')
+  optimizableVariable('drIdx',    [1,numel(drVals)],    'Type','integer')
+  optimizableVariable('dsIdx',    [1,numel(dsVals)],    'Type','integer')
+];
+
+%% 2) Manually define the 4 seeds + 15 good points
+% Data from table
+rList  = [12,13,8,6, 5,5,5,6,7,15,15,15,5,5,15,15,15,15,15];  % Radial numbers
+sList  = [ 5,12,13,8,15,5,7,5,5, 5,15, 5, 5,5,15,5, 5, 6, 5];  % Spiral numbers
+drList = [3.5,2.5,4,3,3.5,4,2.5,3,4,2.5,2.5,3,2.5,2.5,3,2.5,4,4,4];  % dr
+dsList = [0.5,1,2,1.5,0.5,0.5,0.5,0.5,0.5,2,0.5,1,0.5,1,2,0.5,1.5,0.5,2];  % ds
+swr    = [11376.37,9305.64,7772.99,8549.64,10162.91,12470.59,12093.76, ...
+          12678.55,11921.65,10257.69,10497.87,12048.82,13225.79, ...
+          11580.48,9210.93,11561.49,12194.58742,10829.85,12934.39];  % S/W
+
+nPoints = numel(swr);
+initTable = table( ...
+  arrayfun(@(v) find(radialVals==v), rList(:)), ...
+  arrayfun(@(v) find(spiralVals==v), sList(:)), ...
+  arrayfun(@(v) find(drVals==v), drList(:)), ...
+  arrayfun(@(v) find(dsVals==v), dsList(:)), ...
+  'VariableNames', {'radialIdx','spiralIdx','drIdx','dsIdx'});
+f0 = -swr(:);  % Negative because objective function minimizes
+
+%% 3) Run final segment (20 evals total)
+results = bayesopt(@(x)objectiveManual(x, radialVals, spiralVals, drVals, dsVals), ...
+    vars, ...
+    'InitialX', initTable, ...
+    'InitialObjective', f0, ...
+    'MaxObjectiveEvaluations', 20, ...
+    'AcquisitionFunctionName', 'expected-improvement-plus', ...
+    'ExplorationRatio', 0.10, ...
+    'Verbose', 0 ...
+);
+
+save('bayesState_cleaned.mat', 'results');
+
+%% 4) Final report
+bestX = results.XAtMinObjective;
+bestF = results.MinObjective;
+optStrength = -bestF;
+
+rOpt   = radialVals(bestX.radialIdx);
+sOpt   = spiralVals(bestX.spiralIdx);
+drOpt  = drVals(   bestX.drIdx);
+dsOpt  = dsVals(   bestX.dsIdx);
+
+fprintf('\n** Optimal design found **\n');
+fprintf('  radialThreads = %d\n', rOpt);
+fprintf('  spiralThreads = %d\n', sOpt);
+fprintf('  dr            = %.2f\n', drOpt);
+fprintf('  ds            = %.2f\n', dsOpt);
+fprintf('  Measured strength/weight = %.4f\n', optStrength);
+
+%% Objective function: prompt only for new points
+function f = objectiveManual(x,radialVals,spiralVals,drVals,dsVals)
+    r   = radialVals(x.radialIdx);
+    s   = spiralVals(x.spiralIdx);
+    drv = drVals(x.drIdx);
+    dsv = dsVals(x.dsIdx);
+    fprintf('\n--- Next design to evaluate ---\n');
+    fprintf('  radialThreads = %d\n', r);
+    fprintf('  spiralThreads = %d\n', s);
+    fprintf('  dr            = %.2f\n', drv);
+    fprintf('  ds            = %.2f\n', dsv);
+    raw = input('Run simulation and enter measured strength/weight: ');
+    f   = -raw;
+end
